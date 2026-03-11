@@ -2,11 +2,12 @@ import telebot
 from telebot import types
 import os
 from dotenv import load_dotenv
+import speech_recognition as sr
+import soundfile as sf
 
 # Загрузка переменных окружения
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-
 
 # Инициализация бота
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -35,7 +36,7 @@ def start(message):
         scope=types.BotCommandScopeChat(chat_id)
     )
     user_sessions[message.from_user.id] = True
-    bot.reply_to(message, "Приветствую, Я Иру! В любой момент ты можешь написать мне. Помогу чем смогу!")
+    bot.reply_to(message, "Приветствую, Я Иру! В любой момент ты можешь написать мне. Благодаря, мне  Помогу чем смогу!")
 
     bot.set_message_reaction(message.chat.id, message.message_id, [telebot.types.ReactionTypeEmoji('🤝')])
 
@@ -44,7 +45,7 @@ def start(message):
 def help_command(message):
     help_text = (
         """
-<b>Доступные команды:</b>
+<b>Команды бота:</b>
 
 /start - Запустить бота
 /help - Показать справку о командах
@@ -75,7 +76,7 @@ def exit_command(message):
 @bot.message_handler(content_types=['text'])
 def handle_text(message):
     if user_sessions.get(message.from_user.id) is False:
-        bot.send_message(message.chat.id, "Я тебя впервые вижу, напиши /start, познакомимся 🙂")
+        bot.send_message(message.chat.id, "Я тебя впервые вижу. Напиши /start, познакомимся 🙂")
         return
     if message.text == "Справка":
         help_command(message)
@@ -84,6 +85,28 @@ def handle_text(message):
     else:
         bot.send_message(message.chat.id, "Я пока только учусь понимать обычный текст. Попробуй меню!")
 
+@bot.message_handler(content_types=['voice'])
+def handle_voice(message):
+    # Скачивание голосового сообщения
+    file_info = bot.get_file(message.voice.file_id)
+    downloaded_voice = bot.download_file(file_info.file_path)
+
+    with open(os.path.join(os.path., '\\..\\VoiceData\\voice.ogg'), 'wb') as voice:
+        voice.write(downloaded_voice)
+
+    # Конвертация файла
+    # data, samplerate = sf.read('voice.ogg')
+    # sf.write('wav_voice.wav', data, samplerate)
+
+    # recognizer = sr.Recognizer()
+    # with sr.AudioFile('wav_voice.wav') as file:
+    #     audio_data = recognizer.record(file)
+    #     try:
+    #         text = recognizer.recognize_bing(audio_data, language="ru-RU")
+    #         bot.reply_to(message, f"Вы сказали: {text}")
+    #     except:
+    #         bot.reply_to(message, f"Я не совсем понял, что вы сказали")
+ 
 bot.set_my_commands([
     types.BotCommand("/start", "Запустить бота"),
     types.BotCommand("/help", "Показать справку"),
