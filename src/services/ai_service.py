@@ -4,27 +4,45 @@ import io
 
 class AIService:
     def __init__(self):
-        # Модель для текста
+        # Переключаемся на Qwen2.5-72B-Instruct — это сейчас самая стабильная 
+        # и качественная БЕСПЛАТНАЯ модель на Hugging Face. 
+        # DeepSeek часто выдает 402 ошибку из-за перегрузки серверов.
         self.client = InferenceClient(
             model="Qwen/Qwen2.5-72B-Instruct", 
             token=Config.DEEPSEEK_TOKEN
         )
         self.user_contexts = {}
-        self.system_prompt = "Ты — Иру, дружелюбный и умный ИИ-помощник. Отвечай кратко и по делу."
+        self.system_prompt = (
+            "Ты — Иру, дружелюбный и невероятно умный ИИ-помощник. "
+            "Твоя задача — быть максимально полезным, общаться естественно и человечно. "
+            "На простые запросы (привет, как дела) отвечай кратко и дружелюбно. "
+            "На сложные вопросы давай структурированные и точные ответы. "
+            "Используй русский язык. Избегай технических терминов про модели ИИ в диалоге."
+        )
 
     def get_response(self, user_id, user_text):
         if user_id not in self.user_contexts:
             self.user_contexts[user_id] = [{"role": "system", "content": self.system_prompt}]
         
+        # Добавляем сообщение пользователя в контекст
         self.user_contexts[user_id].append({"role": "user", "content": user_text})
         
-        if len(self.user_contexts[user_id]) > 11:
-            self.user_contexts[user_id] = [self.user_contexts[user_id][0]] + self.user_contexts[user_id][-10:]
+        # Ограничиваем размер контекста (системный промпт + 14 последних сообщений)
+        # Увеличим до 15 элементов (1 системный + 14 сообщений диалога), чтобы память была длиннее
+        if len(self.user_contexts[user_id]) > 15:
+            self.user_contexts[user_id] = [self.user_contexts[user_id][0]] + self.user_contexts[user_id][-14:]
 
         try:
+            # Логируем контекст для отладки
+            print(f"--- Context for user {user_id} (Length: {len(self.user_contexts[user_id])}) ---")
+            for msg in self.user_contexts[user_id]:
+                role_icon = "👤" if msg['role'] == "user" else "🤖" if msg['role'] == "assistant" else "⚙️"
+                print(f"{role_icon} {msg['role']}: {msg['content'][:60]}...")
+            print("--------------------------------")
+
             completion = self.client.chat_completion(
                 messages=self.user_contexts[user_id],
-                max_tokens=500,
+                max_tokens=800, # Увеличим лимит для более развернутых ответов
                 stream=False,
             )
             
@@ -33,22 +51,25 @@ class AIService:
                 response = completion.choices[0].message.content
             
             if not response:
-                return "Извини, я получил пустой ответ от ИИ. Попробуй еще раз!"
-                
+                # Вместо ошибки возвращаем человечный ответ и не ломаем контекст
+                return "Хм, кажется, я немного отвлеклась... Можешь повторить еще раз? 😊"
+            
+            # Добавляем ответ ассистента в контекст
             self.user_contexts[user_id].append({"role": "assistant", "content": response})
+            
             return response
         except Exception as e:
             error_msg = str(e)
-            print(f"AI API Error: {error_msg}")
+            print(f"CRITICAL AI ERROR: {error_msg}")
             
-            if "402" in error_msg:
-                return "Модель DeepSeek временно стала платной в этом регионе. Я переключаюсь на альтернативу! 🔄 Попробуйте еще раз."
-            elif "429" in error_msg:
-                return "Ой, слишком много запросов! Дай мне отдохнуть минутку ☕️"
-            elif "503" in error_msg or "Model is overloaded" in error_msg:
-                return "Сервер ИИ сейчас перегружен. Давай попробуем через пару секунд! ⏳"
+            # Если ошибка произошла, удаляем последнее сообщение пользователя, 
+            # чтобы при повторе контекст оставался логичным
+            if user_id in self.user_contexts and self.user_contexts[user_id][-1]["role"] == "user":
+                self.user_contexts[user_id].pop()
             
-            return f"Ошибка ИИ: {error_msg[:50]}..."
+            # Универсальный человечный ответ при ЛЮБОЙ ошибке. 
+            # Никаких упоминаний DeepSeek или технических деталей.
+            return "Ой, что-то я немного задумалась... 🤔 Напиши мне еще раз, пожалуйста, я обязательно отвечу!"
 
     def analyze_sentiment(self, text):
         # Быстрый анализ тональности через ту же модель
