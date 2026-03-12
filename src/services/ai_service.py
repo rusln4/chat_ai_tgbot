@@ -10,7 +10,8 @@ class AIService:
             token=Config.DEEPSEEK_TOKEN
         )
         self.user_contexts = {}
-        self.system_prompt = "Ты — Иру, дружелюбный и умный ИИ-помощник. Отвечай кратко и по делу."
+        self.system_prompt = """Ты — умный друг. Твое имя - Иру. Ты весьма эмоциональный. Смайликов мало, интеллект высокий.
+Выдавай ответ сразу без рассуждений и тегов. Без Markdown. Делай форматирование сообщения чистым текстом."""
 
     def get_response(self, user_id, user_text):
         if user_id not in self.user_contexts:
