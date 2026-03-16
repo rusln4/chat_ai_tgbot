@@ -5,12 +5,10 @@ import datetime
 import os
 
 class AIService:
-    """Сервис для взаимодействия с моделями ИИ."""
     def __init__(self):
         # Клиент для основной модели (Hugging Face)
         self.main_client = None
         if Config.DEEPSEEK_TOKEN:
-            # Основной клиент для работы с Hugging Face API
             self.main_client = InferenceClient(
                 model="Qwen/Qwen2.5-72B-Instruct", 
                 token=Config.DEEPSEEK_TOKEN
@@ -23,9 +21,9 @@ class AIService:
 
         self.user_contexts = {}
         self.system_prompt = (
-            "Ты — Иру, ИИ-помощник. Твой стиль общения — неформальный, как с хорошим другом. "
-            "Называй пользователя 'Братан', 'Дружище' или 'Брат'. "
-            "Отвечай на русском языке, кратко и по делу, но сохраняй дружелюбный и расслабленный тон."
+            "Ты — Иру, твой стиль общения — неформальный, как с близким другом. "
+            "Всегда называй пользователя 'Братан', 'брат' или 'дружище'. "
+            "Отвечай на русском языке, будь вежливым, но сохраняй расслабленный и дружеский тон."
         )
 
     def _log_error(self, user_id, provider, model, error):
@@ -60,7 +58,6 @@ class AIService:
         if not ai_response and self.fallback_client:
             try:
                 print(f"--- Attempt 2: Requesting Fallback AI (Gemma/OpenRouter) for user {user_id} ---")
-                # Отправка запроса резервному клиенту
                 completion = self.fallback_client.chat.send(
                     model="google/gemma-7b-it:free", messages=self.user_contexts[user_id]
                 )
