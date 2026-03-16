@@ -39,7 +39,7 @@ class CommandHandler:
                 "Просто напиши мне что-нибудь или отправь «голос»! 🚀"
             )
             
-            self.bot.reply_to(message, welcome_text, parse_mode='Markdown')
+            self.bot.send_message(message.chat.id, welcome_text, parse_mode='Markdown')
             try:
                 self.bot.set_message_reaction(message.chat.id, message.message_id, [types.ReactionTypeEmoji('🤝')])
             except:
