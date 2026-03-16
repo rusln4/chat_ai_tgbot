@@ -9,6 +9,7 @@ class AIService:
         # Клиент для основной модели (Hugging Face)
         self.main_client = None
         if Config.DEEPSEEK_TOKEN:
+            # Основной клиент для работы с Hugging Face API
             self.main_client = InferenceClient(
                 model="Qwen/Qwen2.5-72B-Instruct", 
                 token=Config.DEEPSEEK_TOKEN
