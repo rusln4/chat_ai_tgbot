@@ -16,6 +16,7 @@ class CommandHandler:
         ]
 
     def register_handlers(self):
+        # Приветственное сообщение для команды /start
         @self.bot.message_handler(commands=['start'])
         def start(message):
             chat_id = message.chat.id
